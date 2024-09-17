@@ -1,0 +1,13 @@
+---
+title: "Data Import"
+author: "Carolyn Martinez"
+date: "2024-09-17"
+output: github_document
+---
+
+```{r setup, echo=FALSE, message = FALSE}
+
+library(tidyverse)
+```
+
+This document will show hoe to improt data. 
