@@ -1,0 +1,134 @@
+---
+title: "tidy_data"
+author: "Carolyn Martinez"
+date: "2024-09-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readxl)
+library (haven)
+```
+
+This document will show how to clean data.
+
+The data set is not tidy because the same variable is spread accross MANY columns as opposed to just one. 
+```{r}
+pulse_df = 
+  haven::read_sas("data_import_examples/public_pulse_data.sas7bdat") |>
+  janitor::clean_names()
+
+pulse_df
+```
+
+#Pivot longer 
+This data needs to go from wide to long format.
+
+```{r}
+pulse_tidy_df = 
+  pivot_longer(
+    pulse_df, 
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit", 
+    values_to = "bdi")
+
+pulse_tidy_df
+```
+
+The code below will: import, tidy, and transform the PULSE dataset into a usable format. 
+```{r}
+pulse_df = 
+  haven::read_sas("./data_import_examples/public_pulse_data.sas7bdat") |>
+  janitor::clean_names() |>
+  pivot_longer( 
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit", 
+    names_prefix = "bdi_score_",
+    values_to = "bdi") |>
+  mutate(
+    visit = replace(visit, visit == "bl", "00m"),
+    visit = factor(visit)) 
+```
+Do one more example. 
+
+```{r learning assessment}
+litters_wide = 
+  read_csv(
+    "./data_import_examples/FAS_litters.csv",
+    na = c("NA", ".", "")) |>
+  janitor::clean_names() |>
+  select(litter_number, ends_with("weight")) |> 
+  pivot_longer(
+    gd0_weight:gd18_weight,
+    names_to = "gd", 
+    values_to = "weight") |> 
+  mutate(
+    gd = case_match(
+      gd,
+      "gd0_weight"  ~ 0,
+      "gd18_weight" ~ 18
+    ))
+```
+
+#Pivot Wider 
+```{r data frame}
+analysis_result = 
+  tibble(
+    group = c("treatment", "treatment", "placebo", "placebo"),
+    time = c("pre", "post", "pre", "post"),
+    mean = c(4, 8, 3.5, 4)
+    
+    
+  )
+```
+This is a made up data set. 
+- the analysis_df is tidy long format but if the intention is to have humans be able too read/analyse it, you might want to pivot_wider. 
+
+
+```{r pivot_wider}
+pivot_wider(
+  analysis_result, 
+  names_from = "time", 
+  values_from = "mean"
+  )|>
+  knitr::kable()
+```
+
+#Joiimg FAS Data 
+
+```{r}
+litter_df = 
+  read_csv(
+    "./data_import_examples/FAS_litters.csv",
+    na = c("NA", ".", "")) |>
+  janitor::clean_names() |>
+  separate(group, into = c("dose", "day_of_tx"), sep = 3) |>
+  relocate(litter_number) |>
+  mutate(
+    wt_gain = gd18_weight - gd0_weight,
+    dose = str_to_lower(dose))
+```
+
+Import 'pups' data set
+
+```{r}
+pup_df = 
+  read_csv("./data_import_examples/FAS_pups.csv", na = c("NA", "", ".")) |>
+  janitor::clean_names() |>
+  mutate(
+    sex = 
+      case_match(
+        sex, 
+        1 ~ "male", 
+        2 ~ "female"),
+    sex = as.factor(sex)) 
+```
+
+
+
+
+
+
+
+
